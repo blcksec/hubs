@@ -12,10 +12,10 @@ echo "[info] getting bio from: $dl" && curl -L -o bio.gz $dl && tar -xf bio.gz
 #BLDR_RET_TOKEN='_Qk9YLTEKYmxkci0yMDE5M...'
 #BLDR_RET_PUB_B64='U0lHLVBVQi0xCm1vemls...'
 
-habCacheKeyPath="$PWD/hab/cache/keys/"
+habCacheKeyPath="$PWD/hab/cache/keys"
 mkdir -p $habCacheKeyPath
-echo $BLDR_HAB_TOKEN > ./hab/cache/keys/mozillareality_hab
-echo $BLDR_RET_TOKEN > ./hab/cache/keys/mozillareality_ret
+echo $BLDR_HAB_TOKEN > $habCacheKeyPath/mozillareality_hab
+echo $BLDR_RET_TOKEN > $habCacheKeyPath/mozillareality_ret
 
 export HAB_ORIGIN=mozillareality
 export HAB_ORIGIN_KEYS=mozillareality_hab
