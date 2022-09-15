@@ -4,9 +4,10 @@ set -e
 #BLDR_RET_TOKEN='_Qk9YLTEKYmxkci0yMDE5M...'
 #BLDR_RET_PUB_B64='U0lHLVBVQi0xCm1vemls...'
 
-mkdir -p /hab/cache/keys/
-echo $BLDR_HAB_TOKEN > /hab/cache/keys/mozillareality_hab
-echo $BLDR_RET_TOKEN > /hab/cache/keys/mozillareality_ret
+habCacheKeyPath="$PWD/hab/cache/keys/"
+mkdir -p $habCacheKeyPath
+echo $BLDR_HAB_TOKEN > ./hab/cache/keys/mozillareality_hab
+echo $BLDR_RET_TOKEN > ./hab/cache/keys/mozillareality_ret
 
 export HAB_ORIGIN=mozillareality
 export HAB_ORIGIN_KEYS=mozillareality_hab
@@ -65,7 +66,8 @@ do_install() {
 }
 EOF
 
-./bio pkg build -k mozillareality .
+
+./bio pkg build --cache-key-path $habCacheKeyPath -k mozillareality .
 
 ### upload
 echo "### upload hab pkg"
@@ -77,4 +79,3 @@ cat /hab/cache/keys/mozillareality-20190117233449.pub
 hart="/hab/cache/artifacts/$HAB_ORIGIN-hubs*.hart"
 ls -lha $hart
 bio pkg upload $hart
-rm -rf $hart
