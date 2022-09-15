@@ -4,6 +4,7 @@ set -e
 #BLDR_RET_TOKEN='_Qk9YLTEKYmxkci0yMDE5M...'
 #BLDR_RET_PUB_B64='U0lHLVBVQi0xCm1vemls...'
 
+mkdir -p /hab/cache/keys/
 echo $BLDR_HAB_TOKEN > /hab/cache/keys/mozillareality_hab
 echo $BLDR_RET_TOKEN > /hab/cache/keys/mozillareality_ret
 
