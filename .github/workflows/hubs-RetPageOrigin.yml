@@ -1,5 +1,3 @@
-### hc-pkg
-# test 1
 name: hubs
 on:
   push:
