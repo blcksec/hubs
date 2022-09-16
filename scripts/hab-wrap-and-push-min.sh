@@ -2,7 +2,6 @@
 #BLDR_RET_TOKEN='_Qk9YLTEKYmxkci0yMDE5M...'
 #BLDR_RET_PUB_B64='U0lHLVBVQi0xCm1vemls...'
 
-
 set -e
 
 ### preps
