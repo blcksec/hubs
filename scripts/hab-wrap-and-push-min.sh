@@ -36,10 +36,6 @@ find dist/hubs/ -type f -name *.css -exec sed -i "s/{{rawhubs-base-assets-path}}
 echo "### build hab pkg"
 export HAB_AUTH_TOKEN=$BLDR_HAB_TOKEN
 
-ls dist
-ls /hab/cache/keys -lha
-
-
 cat > habitat/plan.sh << 'EOF'
 pkg_name=hubs
 pkg_origin=mozillareality
