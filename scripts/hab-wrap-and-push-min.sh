@@ -1,15 +1,18 @@
 #BLDR_HAB_TOKEN='_Qk9YLTEKYmxkci0yMDE3M...'
 #BLDR_RET_TOKEN='_Qk9YLTEKYmxkci0yMDE5M...'
 #BLDR_RET_PUB_B64='U0lHLVBVQi0xCm1vemls...'
+
 set -e
 
 ### preps
 org="biome-sh";repo="biome"
 ver=$(curl -s https://api.github.com/repos/$org/$repo/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
 dl="https://github.com/$org/$repo/releases/download/$ver/bio-${ver#"v"}-x86_64-linux.tar.gz"
-echo "[info] getting bio from: $dl" && curl -L -o bio.gz $dl && tar -xf bio.gz && ./bio --version
-./bio origin key generate mozillareality
+echo "[info] getting bio from: $dl" && curl -L -o bio.gz $dl && tar -xf bio.gz 
+cp ./bio /usr/bin/bio && bio --version
 
+bio origin key generate mozillareality
+# echo $BLDR_RET_PUB_B64 | base64 -d | bio origin key import
 
 habCacheKeyPath="/hab/cache/keys"
 echo "habCacheKeyPath: $habCacheKeyPath"
@@ -65,7 +68,7 @@ do_install() {
 }
 EOF
 
-./bio pkg build --cache-key-path $habCacheKeyPath -k mozillareality .
+bio pkg build --cache-key-path $habCacheKeyPath -k mozillareality .
 
 ### upload
 echo "### upload hab pkg"
@@ -73,11 +76,7 @@ export HAB_BLDR_URL="https://bldr.reticulum.io"
 export HAB_AUTH_TOKEN=$BLDR_RET_TOKEN
 export HAB_ORIGIN_KEYS=mozillareality_ret
 echo $BLDR_RET_PUB_B64 | base64 -d > /hab/cache/keys/mozillareality-20190117233449.pub
-cat /hab/cache/keys/mozillareality-20190117233449.pub
+# cat /hab/cache/keys/mozillareality-20190117233449.pub
 hart="/hab/cache/artifacts/$HAB_ORIGIN-hubs*.hart"
 ls -lha $hart
-./bio pkg upload $hart
-
-hartArr=$(find /hab/cache/artifacts/mozillareality-*.hart -printf "%f")
-echo "${hartArr[0]}/${hartArr[1]}/${hartArr[2]}/${hartArr[3]}"
-
+bio pkg upload $hart
