@@ -12,17 +12,13 @@ echo "[info] getting bio from: $dl" && curl -L -o bio.gz $dl && tar -xf bio.gz
 cp ./bio /usr/bin/bio && bio --version
 
 bio origin key generate mozillareality
-# echo $BLDR_RET_PUB_B64 | base64 -d | bio origin key import
-
 habCacheKeyPath="/hab/cache/keys"
 echo "habCacheKeyPath: $habCacheKeyPath"
 mkdir -p $habCacheKeyPath
 echo $BLDR_HAB_TOKEN > $habCacheKeyPath/mozillareality_hab
 echo $BLDR_RET_TOKEN > $habCacheKeyPath/mozillareality_ret
-
 export HAB_ORIGIN=mozillareality
 export HAB_ORIGIN_KEYS=mozillareality_hab
-
 cd /hubs && mkdir -p dist
 
 ### get turkey files
