@@ -24,7 +24,7 @@ cd /hubs && mkdir -p dist
 
 ### get turkey files
 cp -r /www/hubs ./dist
-#translate turkey => hab
+#translate from turkey to hab
 export BASE_ASSETS_PATH="$(echo "base_assets_path" | sha256sum | cut -d' ' -f1)"
 
 find dist/hubs/ -type f -name *.html -exec sed -i "s/{{rawhubs-base-assets-path}}\//$BASE_ASSETS_PATH\//g" {} \;           
