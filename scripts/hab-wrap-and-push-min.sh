@@ -4,7 +4,6 @@ set -e
 #BLDR_RET_TOKEN='_Qk9YLTEKYmxkci0yMDE5M...'
 #BLDR_RET_PUB_B64='U0lHLVBVQi0xCm1vemls...'
 
-
 ### preps
 org="biome-sh";repo="biome"
 ver=$(curl -s https://api.github.com/repos/$org/$repo/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
