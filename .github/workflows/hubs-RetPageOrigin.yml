@@ -12,6 +12,7 @@ jobs:
       dockerfile: RetPageOriginDockerfile
       personal_k8s_deployment: hubs
       personal_k8s_deployment_container: hubs
+      bio_script_path: scripts/hab-wrap-and-push-min.sh
     secrets:
       DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
       GCP_TURKEYGITOPS_SA_JSON: ${{ secrets.GCP_TURKEYGITOPS_SA_JSON  }}
