@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, memo } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -24,6 +24,7 @@ import {
 
 import dropdownArrowUrl from "../assets/images/dropdown_arrow.png";
 import dropdownArrow2xUrl from "../assets/images/dropdown_arrow@2x.png";
+import { PermissionMessage } from "./room/PermissionsMessages";
 
 export const CLIPPING_THRESHOLD_MIN = 0.0;
 export const CLIPPING_THRESHOLD_MAX = 0.1;
@@ -31,6 +32,18 @@ export const CLIPPING_THRESHOLD_STEP = 0.001;
 export const GLOBAL_VOLUME_MIN = 0;
 export const GLOBAL_VOLUME_MAX = 200;
 export const GLOBAL_VOLUME_STEP = 5;
+
+
+const CustomComponentWrapper = memo(({ componentType: ComponentType, children, ...rest }) => {
+    return <ComponentType {...rest}>{children}</ComponentType>;
+});
+
+CustomComponentWrapper.propTypes = {
+  componentType: PropTypes.elementType,
+  children: PropTypes.node
+};
+
+CustomComponentWrapper.displayName = "CustomComponentWrapper";
 
 function WarnIcon() {
   return (
@@ -92,7 +105,8 @@ export class NumberRangeSelector extends Component {
     digits: PropTypes.number,
     store: PropTypes.object,
     storeKey: PropTypes.string,
-    setValue: PropTypes.func
+    setValue: PropTypes.func,
+    disabled: PropTypes.bool
   };
   state = {
     isFocused: false,
@@ -122,8 +136,8 @@ export class NumberRangeSelector extends Component {
 
   render() {
     return (
-      <div className={classNames(styles.numberWithRange)}>
-        <div className={classNames(styles.numberInNumberWithRange)}>
+      <div className={classNames(styles.numberWithRange, { [styles.disabled]: this.props.disabled })}>
+        <div className={classNames(styles.numberInNumberWithRange, { [styles.disabled]: this.props.disabled })}>
           <input
             type="text"
             value={this.state.displayValue}
@@ -159,6 +173,7 @@ export class NumberRangeSelector extends Component {
                   : finalValue
               );
             }}
+            disabled={this.props.disabled}
           />
         </div>
         <Slider
@@ -171,6 +186,7 @@ export class NumberRangeSelector extends Component {
             this.setState({ displayValue: num, digitsFromUser: 0 });
             this.props.setValue(parseFloat(num));
           }}
+          disabled={this.props.disabled}
         />
       </div>
     );
@@ -196,7 +212,8 @@ function BooleanPreference({ store, storeKey, setValue }) {
 BooleanPreference.propTypes = {
   store: PropTypes.object,
   storeKey: PropTypes.string,
-  setValue: PropTypes.func
+  setValue: PropTypes.func,
+  disabled: PropTypes.bool
 };
 
 function MapCountPreference({ store, storeKey, defaultValue, text }) {
@@ -219,16 +236,17 @@ class Select extends React.Component {
   static propTypes = {
     children: PropTypes.node.isRequired,
     value: PropTypes.string,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    disabled: PropTypes.bool
   };
 
   render() {
     return (
       <div className={styles.dropdown}>
-        <select value={this.props.value} tabIndex="0" onChange={this.props.onChange}>
+        <select value={this.props.value} tabIndex="0" onChange={this.props.onChange} disabled={this.props.disabled}>
           {this.props.children}
         </select>
-        <img className={styles.dropdownArrow} src={dropdownArrowUrl} srcSet={`${dropdownArrow2xUrl} 2x`} />
+        <img className={classNames(styles.dropdownArrow, { [styles.disabled]: this.props.disabled })} src={dropdownArrowUrl} srcSet={`${dropdownArrow2xUrl} 2x`} />
       </div>
     );
   }
@@ -240,7 +258,8 @@ class PreferenceSelect extends React.Component {
     store: PropTypes.object,
     storeKey: PropTypes.string,
     setValue: PropTypes.func,
-    onChanged: PropTypes.func
+    onChanged: PropTypes.func,
+    disabled: PropTypes.bool
   };
   constructor() {
     super();
@@ -260,6 +279,7 @@ class PreferenceSelect extends React.Component {
           this.props.setValue(e.target.value);
           this.props.onChanged && this.props.onChanged(e.target.value);
         }}
+        disabled={this.props.disabled}
       >
         {options}
       </Select>
@@ -272,7 +292,8 @@ export const PREFERENCE_LIST_ITEM_TYPE = {
   SELECT: 2,
   NUMBER_WITH_RANGE: 3,
   MAX_RESOLUTION: 4,
-  MAP_COUNT: 5
+  MAP_COUNT: 5,
+  CUSTOM_COMPONENT: 6
 };
 
 export class MaxResolutionPreferenceItem extends Component {
@@ -523,7 +544,8 @@ class PreferenceListItem extends Component {
     store: PropTypes.object,
     storeKey: PropTypes.string,
     setValue: PropTypes.func,
-    itemProps: PropTypes.object
+    itemProps: PropTypes.object,
+    disabled: PropTypes.bool
   };
   componentDidMount() {
     this.props.store.addEventListener("statechanged", this.storeUpdated);
@@ -541,17 +563,18 @@ class PreferenceListItem extends Component {
   render() {
     const intl = this.props.intl;
     const isCheckbox = this.props.itemProps.prefType === PREFERENCE_LIST_ITEM_TYPE.CHECK_BOX;
+    const isCustomComponent = this.props.itemProps.prefType === PREFERENCE_LIST_ITEM_TYPE.CUSTOM_COMPONENT;
     const isSmallScreen = window.innerWidth < 600;
-    const label = (
-      <span className={styles.preferenceLabel}>{intl.formatMessage(preferenceLabels[this.props.storeKey])}</span>
+    const label = preferenceLabels[this.props.storeKey] && (
+      <span className={classNames(styles.preferenceLabel, { [styles.disabled]: this.props.disabled })}>{intl.formatMessage(preferenceLabels[this.props.storeKey])}</span>
     );
     const prefSchema = this.props.store.schema.definitions.preferences.properties;
     const hasPref =
       this.props.itemProps.prefType === PREFERENCE_LIST_ITEM_TYPE.MAX_RESOLUTION
         ? this.props.store.state.preferences.maxResolutionWidth !== undefined ||
           this.props.store.state.preferences.maxResolutionHeight !== undefined
-        : this.props.store.state.preferences[this.props.storeKey] !== prefSchema[this.props.storeKey].default;
-    const resetToDefault = hasPref ? (
+        :prefSchema[this.props.storeKey] && this.props.store.state.preferences[this.props.storeKey] !== prefSchema[this.props.storeKey].default;
+    const resetToDefault = !this.props.disabled && hasPref ? (
       <ResetToDefaultButton
         onClick={() => {
           switch (this.props.itemProps.prefType) {
@@ -579,11 +602,15 @@ class PreferenceListItem extends Component {
       (this.props.itemProps.disableIfFalse && !this.props.store.state.preferences[this.props.itemProps.disableIfFalse]);
     const indent = this.props.itemProps.disableIfTrue || this.props.itemProps.disableIfFalse;
 
-    if (isCheckbox) {
+    if (isCustomComponent) {
+      return (
+        <Control itemProps={this.props.itemProps} store={this.props.store} />
+      );
+    } else if (isCheckbox) {
       return (
         <ListItem disabled={disabled} indent={indent}>
           <div className={styles.row}>
-            <Control itemProps={this.props.itemProps} store={this.props.store} setValue={this.props.setValue} />
+            <Control itemProps={this.props.itemProps} store={this.props.store} setValue={this.props.setValue} disabled={this.props.disabled} />
             {label}
             <div className={styles.rowRight}>{resetToDefault}</div>
           </div>
@@ -599,7 +626,7 @@ class PreferenceListItem extends Component {
             </div>
             <div className={styles.row}>
               <div className={styles.rowCenter}>
-                <Control itemProps={this.props.itemProps} store={this.props.store} setValue={this.props.setValue} />
+                <Control itemProps={this.props.itemProps} store={this.props.store} setValue={this.props.setValue} disabled={this.props.disabled} />
               </div>
               <div className={styles.rowRight}>{resetToDefault}</div>
             </div>
@@ -613,7 +640,7 @@ class PreferenceListItem extends Component {
           {<CheckboxPlaceholder />}
           {label}
           <div className={styles.rowRight}>
-            <Control itemProps={this.props.itemProps} store={this.props.store} setValue={this.props.setValue} />
+            <Control itemProps={this.props.itemProps} store={this.props.store} setValue={this.props.setValue} disabled={this.props.disabled} />
           </div>
           <div className={styles.rowRight}>{resetToDefault}</div>
         </div>
@@ -684,7 +711,8 @@ const controlType = new Map([
   [PREFERENCE_LIST_ITEM_TYPE.MAX_RESOLUTION, MaxResolutionPreferenceItem],
   [PREFERENCE_LIST_ITEM_TYPE.SELECT, PreferenceSelect],
   [PREFERENCE_LIST_ITEM_TYPE.NUMBER_WITH_RANGE, NumberRangeSelector],
-  [PREFERENCE_LIST_ITEM_TYPE.MAP_COUNT, MapCountPreference]
+  [PREFERENCE_LIST_ITEM_TYPE.MAP_COUNT, MapCountPreference],
+  [PREFERENCE_LIST_ITEM_TYPE.CUSTOM_COMPONENT, CustomComponentWrapper],
 ]);
 
 function Control({ itemProps, store, setValue }) {
@@ -694,7 +722,8 @@ function Control({ itemProps, store, setValue }) {
 Control.propTypes = {
   itemProps: PropTypes.object,
   store: PropTypes.object,
-  setValue: PropTypes.func
+  setValue: PropTypes.func,
+  disabled: PropTypes.bool
 };
 
 function createItem(itemProps, store) {
@@ -713,6 +742,7 @@ function createItem(itemProps, store) {
       storeKey={itemProps.key}
       setValue={setValue}
       onChanged={itemProps.onChanged}
+      disabled={itemProps.disabled}
     />
   );
 }
@@ -799,6 +829,8 @@ class PreferencesScreen extends Component {
     super();
 
     this.storeUpdated = this.storeUpdated.bind(this);
+    this.permissionsUpdated = this.permissionsUpdated.bind(this);
+    const canVoiceChat = APP.hubChannel.can("voice_chat");
 
     this.mediaDevicesManager = APP.mediaDevicesManager;
 
@@ -808,7 +840,8 @@ class PreferencesScreen extends Component {
       preferredMic: {
         key: "preferredMic",
         prefType: PREFERENCE_LIST_ITEM_TYPE.SELECT,
-        options: [{ value: "none", text: "None" }]
+        options: [{ value: "none", text: "None" }],
+        disabled: !canVoiceChat
       },
       preferredCamera: {
         key: "preferredCamera",
@@ -821,7 +854,8 @@ class PreferencesScreen extends Component {
           prefType: PREFERENCE_LIST_ITEM_TYPE.SELECT,
           options: [{ value: "none", text: "None" }]
         }
-      })
+      }),
+      canVoiceChat
     };
   }
 
@@ -843,6 +877,7 @@ class PreferencesScreen extends Component {
     }));
     const preferredMic = { ...this.state.preferredMic };
     preferredMic.options = micOptions;
+    preferredMic.disabled = !this.state.canVoiceChat;
 
     const speakersOptions = this.mediaDevicesManager.outputDevicesOptions.map(device => ({
       value: device.value,
@@ -893,19 +928,28 @@ class PreferencesScreen extends Component {
   componentDidMount() {
     this.props.store.addEventListener("statechanged", this.storeUpdated);
     this.mediaDevicesManager.on(MediaDevicesEvents.DEVICE_CHANGE, this.onMediaDevicesUpdated);
+    APP.hubChannel.addEventListener("permissions_updated", this.permissionsUpdated);
 
-    this.mediaDevicesManager.fetchMediaDevices().then(this.updateMediaDevices);
+    this.state.canVoiceChat && this.mediaDevicesManager.fetchMediaDevices().then(this.updateMediaDevices);
   }
 
   componentWillUnmount() {
     this.props.store.removeEventListener("statechanged", this.storeUpdated);
     this.mediaDevicesManager.off(MediaDevicesEvents.DEVICE_CHANGE, this.onMediaDevicesUpdated);
+    APP.hubChannel.removeEventListener("permissions_updated", this.permissionsUpdated);
+  }
+
+  permissionsUpdated() {
+    this.setState({
+      canVoiceChat: APP.hubChannel.can("voice_chat")
+    });
+    this.updateMediaDevices();
   }
 
   storeUpdated() {
     const { preferredMic } = this.props.store.state.preferences;
     if (preferredMic !== this.mediaDevicesManager.selectedMicDeviceId) {
-      this.mediaDevicesManager.startMicShare({ updatePrefs: false }).then(this.updateMediaDevices);
+      this.state.canVoiceChat && this.mediaDevicesManager.startMicShare({ updatePrefs: false }).then(this.updateMediaDevices);
     }
   }
 
@@ -1004,6 +1048,12 @@ class PreferencesScreen extends Component {
       [
         CATEGORY_AUDIO,
         [
+          ...(!this.state.canVoiceChat ? [{
+            key: "voiceChatPinnedMessage",
+            prefType: PREFERENCE_LIST_ITEM_TYPE.CUSTOM_COMPONENT,
+            componentType: PermissionMessage,
+            permission: "voice_chat"
+          }] : []),
           ...(MediaDevicesManager.isAudioInputSelectEnabled ? [this.state.preferredMic] : []),
           ...(MediaDevicesManager.isAudioOutputSelectEnabled ? [this.state.preferredSpeakers] : []),
           {
@@ -1012,7 +1062,8 @@ class PreferencesScreen extends Component {
             min: GLOBAL_VOLUME_MIN,
             max: GLOBAL_VOLUME_MAX,
             step: GLOBAL_VOLUME_STEP,
-            digits: 0
+            digits: 0,
+            disabled: !this.state.canVoiceChat
           },
           {
             key: "globalMediaVolume",
